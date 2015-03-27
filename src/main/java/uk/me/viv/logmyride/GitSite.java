@@ -22,6 +22,8 @@ public class GitSite {
 
     private static final String BLANK_PASSWORD = "";
 
+    private static final Logger LOGGER = Logger.getLogger(GitSite.class.getName());
+
     private final String user;
     private final String email;
     private final String token;
@@ -36,11 +38,11 @@ public class GitSite {
 
     public void update() {
         try {
-            System.out.println("Preparing destination folder for cloned repository");
+            LOGGER.info("Preparing destination folder for cloned repository");
             File localPath = File.createTempFile("TestGitRepository", "");
             localPath.delete();
 
-            System.out.println("Cloning " + this.remoteURL + " into " + localPath);
+            LOGGER.info("Cloning " + this.remoteURL + " into " + localPath);
             Git result = Git.cloneRepository()
                     .setURI(this.remoteURL)
                     .setDirectory(localPath)
@@ -50,11 +52,11 @@ public class GitSite {
             Repository repository = result.getRepository();
             Git git = new Git(repository);
 
-            System.out.println("Creating test file");
+            LOGGER.info("Creating test file");
             File myfile = new File(repository.getDirectory().getParent(), "testfile");
             myfile.createNewFile();
 
-            System.out.println("Adding test file");
+            LOGGER.info("Adding test file");
             git.add()
                     .addFilepattern("testfile")
                     .call();
@@ -64,9 +66,9 @@ public class GitSite {
                     .setMessage("Added testfile")
                     .call();
 
-            System.out.println("Committed file " + myfile + " to repository at " + repository.getDirectory());
+            LOGGER.info("Committed file " + myfile + " to repository at " + repository.getDirectory());
 
-            System.out.println("Pushing to remote");
+            LOGGER.info("Pushing to remote");
             CredentialsProvider cp = new UsernamePasswordCredentialsProvider(this.token, BLANK_PASSWORD);            
             PushCommand pc = git.push();
             pc.setCredentialsProvider(cp)
@@ -76,8 +78,8 @@ public class GitSite {
                 if(it.hasNext()){
                     PushResult pr = it.next();                    
                     for (RemoteRefUpdate ru : pr.getRemoteUpdates() ) {
-                        System.out.println("Push Status: " + ru.getStatus());
-                        System.out.println("Updated: " + ru.getTrackingRefUpdate().getLocalName());
+                        LOGGER.info("Push Status: " + ru.getStatus());
+                        LOGGER.info("Updated: " + ru.getTrackingRefUpdate().getLocalName());
                     }
                 }
             } catch (InvalidRemoteException e) {
@@ -85,11 +87,11 @@ public class GitSite {
             }
 
             repository.close();
-            System.out.println("Removing local repository");
+            LOGGER.info("Removing local repository");
             FileUtils.deleteDirectory(localPath);
 
         }   catch (GitAPIException | IOException ex) {
-            Logger.getLogger(GitSite.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
 }
