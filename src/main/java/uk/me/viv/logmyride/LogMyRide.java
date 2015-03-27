@@ -47,12 +47,13 @@ public class LogMyRide {
 
         GeoFence fence = new GeoFence();
         
-        MailWatch mail = new MailWatch();
-        mail.getNewEmails(settings.getProperty("mail.protocol"), 
+        MailWatch mail = new MailWatch(
+                settings.getProperty("mail.protocol"),
                 settings.getProperty("mail.host"), 
                 settings.getProperty("mail.port"), 
                 settings.getProperty("mail.username"), 
                 settings.getProperty("mail.password"));
+        mail.getNewEmails();
 
         GitSite site = new GitSite(
                 settings.getProperty("github.user"), 

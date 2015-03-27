@@ -19,26 +19,41 @@ import javax.mail.internet.MimeBodyPart;
 
 public class MailWatch {
 
-    private Properties getServerProperties(String protocol, String host, String port) {
+    private final String protocol;
+    private final String host;
+    private final String port;
+    private final String username;
+    private final String password;
+
+    public MailWatch(String protocol, String host, String port, String username, String password) {
+
+        this.protocol = protocol;
+        this.host = host;
+        this.port = port;
+        this.username = username;
+        this.password = password;
+    }
+
+    private Properties getServerProperties() {
 
         Properties properties = new Properties();
-        properties.put(String.format("mail.%s.host", protocol), host);
-        properties.put(String.format("mail.%s.port", protocol), port);
-        properties.setProperty(String.format("mail.%s.socketFactory.class", protocol), "javax.net.ssl.SSLSocketFactory");
-        properties.setProperty(String.format("mail.%s.socketFactory.fallback", protocol), "false");
-        properties.setProperty(String.format("mail.%s.socketFactory.port", protocol), String.valueOf(port));
+        properties.put(String.format("mail.%s.host", this.protocol), this.host);
+        properties.put(String.format("mail.%s.port", this.protocol), this.port);
+        properties.setProperty(String.format("mail.%s.socketFactory.class", this.protocol), "javax.net.ssl.SSLSocketFactory");
+        properties.setProperty(String.format("mail.%s.socketFactory.fallback", this.protocol), "false");
+        properties.setProperty(String.format("mail.%s.socketFactory.port", this.protocol), String.valueOf(this.port));
 
         return properties;
     }
 
-    public void getNewEmails(String protocol, String host, String port, String userName, String password) {
+    public void getNewEmails() {
 
-        Properties properties = getServerProperties(protocol, host, port);
+        Properties properties = getServerProperties();
         Session session = Session.getDefaultInstance(properties);
 
         try {
-            Store store = session.getStore(protocol);
-            store.connect(userName, password);
+            Store store = session.getStore(this.protocol);
+            store.connect(this.username, this.password);
 
             Folder inbox = store.getFolder("INBOX");
             inbox.open(Folder.READ_WRITE);
