@@ -19,8 +19,6 @@ import javax.mail.internet.MimeBodyPart;
 
 public class MailWatch {
 
-    private static final String KMZ_EXTENSION = "kmz";
-
     private final String protocol;
     private final String host;
     private final String port;
@@ -84,7 +82,7 @@ public class MailWatch {
 
                                 String extension = fileName.substring(fileName.lastIndexOf(".") + 1, fileName.length());
 
-                                if (KMZ_EXTENSION.equalsIgnoreCase(extension)) {
+                                if (KMZFile.EXTENSION.equalsIgnoreCase(extension)) {
                                     System.out.println("Saving " + fileName);
                                     part.saveFile("/tmp/" + fileName);
                                 }
