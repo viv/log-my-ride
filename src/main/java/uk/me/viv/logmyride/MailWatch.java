@@ -19,6 +19,8 @@ import javax.mail.internet.MimeBodyPart;
 
 public class MailWatch {
 
+    private static final String KMZ_EXTENSION = "kmz";
+
     private final String protocol;
     private final String host;
     private final String port;
@@ -62,7 +64,7 @@ public class MailWatch {
             Message[] messages = inbox.getMessages(1, count);
             for (Message message : messages) {
                 if (!message.getFlags().contains(Flags.Flag.SEEN)) {
-                    
+
                     String attachFiles = "";
                     String messageContent = "";
                     String contentType = message.getContentType();
@@ -79,8 +81,13 @@ public class MailWatch {
                                 // this part is an attachment
                                 String fileName = part.getFileName();
                                 attachFiles += fileName + ", ";
-                                part.saveFile("/tmp/" + fileName);
 
+                                String extension = fileName.substring(fileName.lastIndexOf(".") + 1, fileName.length());
+
+                                if (KMZ_EXTENSION.equalsIgnoreCase(extension)) {
+                                    System.out.println("Saving " + fileName);
+                                    part.saveFile("/tmp/" + fileName);
+                                }
                             } else {
                                 // could be the message content
                                 messageContent = part.getContent().toString();
