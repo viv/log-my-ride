@@ -20,7 +20,7 @@ public class LogMyRide {
      */
     public static void main(String[] args) {
         System.out.println("Starting...");
-        
+
         // INJECT CONFIG
         //      From a config properties file?
         // GEO FENCE
@@ -34,7 +34,7 @@ public class LogMyRide {
         // GIT INTEGRATION
         //      Upload KMZ to github
         //      Append ride YML to file on github
-        
+
         // While true
         //  check for MotionX mail
         //  if HaveMail
@@ -42,33 +42,39 @@ public class LogMyRide {
         //      Create ride info
         //      Update website
         //
-        
+
         Properties settings = LogMyRide.getProperties();
 
-        GeoFence fence = new GeoFence();
-        
         MailWatch mail = new MailWatch(
                 settings.getProperty("mail.protocol"),
-                settings.getProperty("mail.host"), 
-                settings.getProperty("mail.port"), 
-                settings.getProperty("mail.username"), 
+                settings.getProperty("mail.host"),
+                settings.getProperty("mail.port"),
+                settings.getProperty("mail.username"),
                 settings.getProperty("mail.password"));
         mail.getNewEmails();
 
+        Fence fence = new Fence(
+                settings.getProperty("fence.top"),
+                settings.getProperty("fence.bottom"),
+                settings.getProperty("fence.left"),
+                settings.getProperty("fence.right"));
+
+        GeoFence geoFence = new GeoFence(fence);
+
         GitSite site = new GitSite(
-                settings.getProperty("github.user"), 
-                settings.getProperty("github.email"), 
-                settings.getProperty("github.token"), 
+                settings.getProperty("github.user"),
+                settings.getProperty("github.email"),
+                settings.getProperty("github.token"),
                 settings.getProperty("github.remoteURL"));
         site.update();
     }
-    
-    
+
+
     private static Properties getProperties() {
- 
+
     	Properties prop = new Properties();
     	InputStream input = null;
- 
+
     	try {
             String filename = "LogMyRide.properties";
             input = LogMyRide.class.getClassLoader().getResourceAsStream(filename);
@@ -78,7 +84,7 @@ public class LogMyRide {
             }
 
             prop.load(input);
- 
+
     	} catch (IOException ex) {
             ex.printStackTrace();
         } finally{

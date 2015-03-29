@@ -30,8 +30,10 @@ import org.apache.commons.lang3.StringUtils;
 public class GeoFence {
 
     private static final String KMZ_WATCH_DIR = "/tmp";
+    private final Fence fence;
 
-    public GeoFence() {
+    public GeoFence(Fence fence) {
+        this.fence = fence;
         fence();
     }
 
@@ -86,16 +88,18 @@ public class GeoFence {
         InputStream fixedKMLStream = fixNamespace(kmlStream);
 
         final Kml kml = Kml.unmarshal(fixedKMLStream);
-        kml.marshal(System.out);
+//        kml.marshal(System.out);
 
         final Document doc = (Document) kml.getFeature();
 
         final List<Feature> placemarks = doc.getFeature();
         for (Feature placemark : placemarks) {
             Placemark p = (Placemark) placemark;
-            System.out.println(p.getName());
+
             Geometry geometry = p.getGeometry();
             if (geometry instanceof MultiGeometry) {
+                System.out.println("MultiGeometry: " + p.getName());
+
                 List<Geometry> geometries = ((MultiGeometry)geometry).getGeometry();
                 LineString ls = (LineString) geometries.get(0);
                 List<Coordinate> coordinates = ls.getCoordinates();
@@ -107,12 +111,27 @@ public class GeoFence {
             } else {
                 List<Coordinate> coordinates = ((Point)geometry).getCoordinates();
                 for (Coordinate coordinate : coordinates) {
-                    System.out.println(coordinate.getLatitude());
-                    System.out.println(coordinate.getLongitude());
-                    System.out.println(coordinate.getAltitude());
+
+
+                    if (isInsideFence(coordinate)) {
+                        System.out.println("Removing node: " + p.getName());
+                        System.out.println(" ------- " + coordinate.getLongitude());
+                        System.out.println(" ------- " + coordinate.getLatitude());
+                    } else {
+                        System.out.println("Leave node as is: " + p.getName());
+                        System.out.println(" ------- " + coordinate.getLongitude());
+                        System.out.println(" ------- " + coordinate.getLatitude());
+                    }
                 }
             }
         }
+    }
+
+    private boolean isInsideFence(Coordinate coordinate) {
+        return coordinate.getLongitude() < this.fence.getRight()
+                && coordinate.getLongitude() > this.fence.getLeft()
+                && coordinate.getLatitude() < this.fence.getTop()
+                && coordinate.getLatitude() > this.fence.getBottom();
     }
 
     private InputStream fixNamespace(InputStream kmlStream) throws IOException, UnsupportedEncodingException {
