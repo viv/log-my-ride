@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +42,7 @@ public class GeoFence {
         List<File> filesToFence = this.getFilesToFence();
 
         for (File file : filesToFence) {
+            System.out.println("");
             Logger.getLogger(LogMyRide.class.getName()).info("TO FENCE: " + file.getAbsolutePath());
 
             try {
@@ -95,36 +97,40 @@ public class GeoFence {
         final List<Feature> placemarks = doc.getFeature();
         for (Feature placemark : placemarks) {
             Placemark p = (Placemark) placemark;
-
+            System.out.println("Fencing " + p.getName());
             Geometry geometry = p.getGeometry();
             if (geometry instanceof MultiGeometry) {
-                System.out.println("MultiGeometry: " + p.getName());
-
                 List<Geometry> geometries = ((MultiGeometry)geometry).getGeometry();
-                LineString ls = (LineString) geometries.get(0);
-                List<Coordinate> coordinates = ls.getCoordinates();
-                for (Coordinate coordinate : coordinates) {
-//                    System.out.println(coordinate.getLatitude());
-//                    System.out.println(coordinate.getLongitude());
-//                    System.out.println(coordinate.getAltitude());
+                final Geometry firstGeometry = geometries.get(0);
+                if (firstGeometry instanceof LineString) {
+                    LineString ls = (LineString) firstGeometry;
+                    ls.setCoordinates(fence(ls.getCoordinates()));
+                } else {
+                    System.out.println("Fiest geometry is not a LineString: " + firstGeometry.getClass());
                 }
+            } else if (geometry instanceof Point) {
+                Point point = (Point) geometry;
+                point.setCoordinates(fence(point.getCoordinates()));
             } else {
-                List<Coordinate> coordinates = ((Point)geometry).getCoordinates();
-                for (Coordinate coordinate : coordinates) {
-
-
-                    if (isInsideFence(coordinate)) {
-                        System.out.println("Removing node: " + p.getName());
-                        System.out.println(" ------- " + coordinate.getLongitude());
-                        System.out.println(" ------- " + coordinate.getLatitude());
-                    } else {
-                        System.out.println("Leave node as is: " + p.getName());
-                        System.out.println(" ------- " + coordinate.getLongitude());
-                        System.out.println(" ------- " + coordinate.getLatitude());
-                    }
-                }
+                System.out.println("Unable to handle Geometry of type: " + geometry.getClass());
             }
         }
+    }
+
+    private List<Coordinate> fence(List<Coordinate> coordinates) {
+        Iterator<Coordinate> iterator = coordinates.iterator();
+        while (iterator.hasNext()) {
+            Coordinate coordinate = iterator.next();
+
+            if (isInsideFence(coordinate)) {
+                System.out.println(" - Removing coordinate "
+                        + coordinate.getLongitude()
+                        + ", " + coordinate.getLatitude());
+                iterator.remove();
+            }
+        }
+
+        return coordinates;
     }
 
     private boolean isInsideFence(Coordinate coordinate) {
