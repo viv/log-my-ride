@@ -69,14 +69,14 @@ public class GitSite {
             LOGGER.info("Committed file " + myfile + " to repository at " + repository.getDirectory());
 
             LOGGER.info("Pushing to remote");
-            CredentialsProvider cp = new UsernamePasswordCredentialsProvider(this.token, BLANK_PASSWORD);            
+            CredentialsProvider cp = new UsernamePasswordCredentialsProvider(this.token, BLANK_PASSWORD);
             PushCommand pc = git.push();
             pc.setCredentialsProvider(cp)
                     .setPushAll();
             try {
                 Iterator<PushResult> it = pc.call().iterator();
                 if(it.hasNext()){
-                    PushResult pr = it.next();                    
+                    PushResult pr = it.next();
                     for (RemoteRefUpdate ru : pr.getRemoteUpdates() ) {
                         LOGGER.info("Push Status: " + ru.getStatus());
                         LOGGER.info("Updated: " + ru.getTrackingRefUpdate().getLocalName());
