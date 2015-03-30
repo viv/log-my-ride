@@ -51,7 +51,8 @@ public class GeoFence {
                 ZipEntry entry;
                 while ((entry = zis.getNextEntry()) !=  null) {
                     if (entry.getName().toLowerCase().endsWith(KMLFile.EXTENSION)) {
-                       parseKML(zis);
+                       Kml kml = parseKML(zis);
+                       kml.marshalAsKmz("/Users/matthewvivian/NetBeansProjects/LogMyRide/samples/" + file.getName());
                     }
                 }
                 zis.close();
@@ -85,8 +86,7 @@ public class GeoFence {
         return filesToFence;
     }
 
-
-    private void parseKML(InputStream kmlStream) throws FileNotFoundException, IOException {
+    private Kml parseKML(InputStream kmlStream) throws FileNotFoundException, IOException {
         InputStream fixedKMLStream = fixNamespace(kmlStream);
 
         final Kml kml = Kml.unmarshal(fixedKMLStream);
@@ -115,6 +115,7 @@ public class GeoFence {
                 System.out.println("Unable to handle Geometry of type: " + geometry.getClass());
             }
         }
+        return kml;
     }
 
     private List<Coordinate> fence(List<Coordinate> coordinates) {
