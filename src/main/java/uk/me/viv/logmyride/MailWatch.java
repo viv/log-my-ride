@@ -77,7 +77,7 @@ public class MailWatch {
                             MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(partCount);
                             if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
                                 // this part is an attachment
-                                String fileName = part.getFileName().replaceAll(" ", "-").toLowerCase();
+                                String fileName = part.getFileName().replaceAll(" +", "-").toLowerCase();
                                 attachFiles += fileName + ", ";
 
                                 String extension = fileName.substring(fileName.lastIndexOf(".") + 1, fileName.length());
