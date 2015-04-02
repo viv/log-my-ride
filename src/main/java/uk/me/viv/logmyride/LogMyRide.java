@@ -58,13 +58,16 @@ public class LogMyRide {
 
         Properties settings = LogMyRide.getProperties();
 
-//        MailWatch mail = new MailWatch(
-//                settings.getProperty("mail.protocol"),
-//                settings.getProperty("mail.host"),
-//                settings.getProperty("mail.port"),
-//                settings.getProperty("mail.username"),
-//                settings.getProperty("mail.password"));
-//        mail.getNewEmails();
+        DirectoryWatcher watcher = new DirectoryWatcher(KMZ_WATCH_DIR);
+        watcher.start();
+
+        MailWatch mail = new MailWatch(
+                settings.getProperty("mail.protocol"),
+                settings.getProperty("mail.host"),
+                settings.getProperty("mail.port"),
+                settings.getProperty("mail.username"),
+                settings.getProperty("mail.password"));
+        mail.start();
 
         Fence fence = new Fence(
                 settings.getProperty("fence.top"),

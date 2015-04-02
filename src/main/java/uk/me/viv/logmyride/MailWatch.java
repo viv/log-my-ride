@@ -2,6 +2,7 @@ package uk.me.viv.logmyride;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,13 +18,15 @@ import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.internet.MimeBodyPart;
 
-public class MailWatch {
+public class MailWatch implements Runnable {
 
+    private static final long CHECK_INTERVAL = TimeUnit.MINUTES.toMillis(10);
     private final String protocol;
     private final String host;
     private final String port;
     private final String username;
     private final String password;
+    private Thread t;
 
     public MailWatch(String protocol, String host, String port, String username, String password) {
 
@@ -32,6 +35,26 @@ public class MailWatch {
         this.port = port;
         this.username = username;
         this.password = password;
+    }
+
+    public void run() {
+        try {
+            while (true) {
+                this.getNewEmails();
+                Thread.sleep(CHECK_INTERVAL);
+            }
+        } catch (InterruptedException e) {
+            System.out.println("Thread interrupted " +  this.getClass().getName());
+        }
+        System.out.println("Thread exiting " +  this.getClass().getName());
+    }
+
+    public void start() {
+        System.out.println("Starting " + this.getClass().getName());
+        if (t == null) {
+            t = new Thread(this);
+            t.start();
+        }
     }
 
     private Properties getServerProperties() {
@@ -46,7 +69,7 @@ public class MailWatch {
         return properties;
     }
 
-    public void getNewEmails() {
+    private void getNewEmails() {
 
         Properties properties = getServerProperties();
         Session session = Session.getDefaultInstance(properties);
