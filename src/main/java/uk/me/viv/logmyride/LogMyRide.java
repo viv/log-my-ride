@@ -32,7 +32,7 @@ public class LogMyRide {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        System.out.println("Starting...");
+        System.out.println("Starting " + LogMyRide.class.getName());
 
         // INJECT CONFIG
         //      From a config properties file?
