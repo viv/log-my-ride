@@ -52,6 +52,7 @@ public class DirectoryWatcher implements Runnable {
      *
      * Created with help from http://andreinc.net/2013/12/06/java-7-nio-2-tutorial-writing-a-simple-filefolder-monitor-using-the-watch-service-api/
      */
+    @Override
     public void run() {
         if (!path.toFile().isDirectory()) {
             throw new IllegalArgumentException("Path: " + path + " is not a folder");
