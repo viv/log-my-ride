@@ -118,7 +118,7 @@ public class LogMyRide {
         File dir = new File(KMZ_WATCH_DIR);
         File[] directoryListing = dir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                return name.toLowerCase().endsWith(KMZFile.EXTENSION);
+                return KMZFile.isKMZ(name);
             }
         });
 
