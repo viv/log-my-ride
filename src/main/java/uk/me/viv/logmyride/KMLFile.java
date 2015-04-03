@@ -23,10 +23,20 @@
  */
 package uk.me.viv.logmyride;
 
+import java.io.InputStream;
+
 /**
  *
  * @author Matthew Vivian <matthew@viv.me.uk>
  */
 public class KMLFile {
     public static final String EXTENSION = "kml";
+
+    static boolean isKML(String path) {
+        return path.toLowerCase().endsWith(EXTENSION);
+    }
+
+    KMLFile(InputStream kml) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

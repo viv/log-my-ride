@@ -23,10 +23,55 @@
  */
 package uk.me.viv.logmyride;
 
+import de.micromata.opengis.kml.v_2_2_0.Kml;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
 /**
  *
  * @author Matthew Vivian <matthew@viv.me.uk>
  */
 public class KMZFile {
     public static final String EXTENSION = "kmz";
+
+    private final File kmz;
+
+    public KMZFile(File kmz) {
+        this.kmz = kmz;
+    }
+
+    public KMLFile getFirstKML() {
+        KMLFile kml = null;
+        try {
+            final ZipInputStream zis = new ZipInputStream(new FileInputStream(kmz));
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (KMLFile.isKML(entry.getName())) {
+                    kml = new KMLFile(zis);
+                    break;
+                }
+            }
+            zis.close();
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return kml;
+    }
+
+    static boolean isKMZ(Path path) {
+        return KMZFile.isKMZ(path.toString());
+    }
+
+    static boolean isKMZ(String path) {
+        return path.toLowerCase().endsWith(EXTENSION);
+    }
 }
