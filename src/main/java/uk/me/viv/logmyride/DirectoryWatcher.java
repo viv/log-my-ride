@@ -42,7 +42,6 @@ import java.nio.file.WatchService;
 public class DirectoryWatcher implements Runnable {
 
     private Path path;
-    private Thread t;
 
     public DirectoryWatcher(String watchDir) {
         this.path = Paths.get(watchDir);
@@ -89,14 +88,6 @@ public class DirectoryWatcher implements Runnable {
             ioe.printStackTrace();
         } catch (InterruptedException ie) {
             ie.printStackTrace();
-        }
-    }
-
-    public void start() {
-        System.out.println("Starting " + this.getClass().getName());
-        if (t == null) {
-            t = new Thread(this);
-            t.start();
         }
     }
 }

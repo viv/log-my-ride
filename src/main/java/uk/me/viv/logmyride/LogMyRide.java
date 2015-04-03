@@ -58,16 +58,20 @@ public class LogMyRide {
 
         Properties settings = LogMyRide.getProperties();
 
+        System.out.println("Starting directory watcher");
         DirectoryWatcher watcher = new DirectoryWatcher(KMZ_WATCH_DIR);
-        watcher.start();
+        Thread directoryWatcher = new Thread(watcher);
+        directoryWatcher.start();
 
+        System.out.println("Starting mail watcher");
         MailWatch mail = new MailWatch(
                 settings.getProperty("mail.protocol"),
                 settings.getProperty("mail.host"),
                 settings.getProperty("mail.port"),
                 settings.getProperty("mail.username"),
                 settings.getProperty("mail.password"));
-        mail.start();
+        Thread mailChecker = new Thread(mail);
+        mailChecker.start();
 
         Fence fence = new Fence(
                 settings.getProperty("fence.top"),
