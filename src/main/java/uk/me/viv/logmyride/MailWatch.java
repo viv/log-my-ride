@@ -35,9 +35,7 @@ public class MailWatch implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
-            this.getNewEmails();
-        }
+        this.getNewEmails();
     }
 
     private Properties getServerProperties() {
