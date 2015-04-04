@@ -23,10 +23,9 @@
  */
 package uk.me.viv.logmyride;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,16 +39,16 @@ import java.util.zip.ZipInputStream;
 public class KMZFile {
     public static final String EXTENSION = "kmz";
 
-    private final File kmz;
+    private final InputStream kmz;
 
-    public KMZFile(File kmz) {
+    public KMZFile(InputStream kmz) {
         this.kmz = kmz;
     }
 
     public KMLFile getFirstKML() {
         KMLFile kml = null;
         try {
-            final ZipInputStream zis = new ZipInputStream(new FileInputStream(kmz));
+            final ZipInputStream zis = new ZipInputStream(kmz);
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (KMLFile.isKML(entry.getName())) {
