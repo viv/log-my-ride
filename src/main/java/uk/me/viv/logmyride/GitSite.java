@@ -24,6 +24,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 public class GitSite {
 
     private static final String BLANK_PASSWORD = "";
+    private static final String TMP_GIT_DIR = "/tmp/tmpGitDir";
 
     private static final Logger LOGGER = Logger.getLogger(GitSite.class.getName());
 
@@ -38,36 +39,36 @@ public class GitSite {
         this.email = email;
         this.token = token;
         this.remoteURL = remoteURL;
+
+        tmpCloneDir = new File(TMP_GIT_DIR);
         try {
             this.git = cloneToLocalFilesystem();
         } catch (GitAPIException ex) {
-            throw new IIOException(email, ex);
+            throw new IIOException("Failed to clone remote repository", ex);
         }
     }
 
     public void update() {
         try {
-
-            File targetFile = new File(git.getRepository().getDirectory().getParent(), "testfile");
-            InputStream contents = IOUtils.toInputStream("Sample file", "UTF-8");
-
             LOGGER.info("Creating file");
+            File targetFile = new File(git.getRepository().getDirectory().getParent(), "newfile");
+            InputStream contents = IOUtils.toInputStream("Sample file", "UTF-8");
             FileUtils.copyInputStreamToFile(contents, targetFile);
 
             add(targetFile);
             commit("Added testfile");
-
-            LOGGER.info("Committed file " + targetFile + " to repository at " + git.getRepository().getDirectory());
-
             push();
-
-            git.close();
-            LOGGER.info("Removing local repository");
-//            FileUtils.deleteDirectory(localPath);
+            close();
 
         }   catch (GitAPIException | IOException ex) {
             LOGGER.log(Level.SEVERE, null, ex);
         }
+    }
+
+    public void close() throws IOException {
+        git.close();
+        LOGGER.info("Removing local repository");
+        FileUtils.deleteDirectory(this.tmpCloneDir);
     }
 
     public void push() throws GitAPIException {
@@ -95,27 +96,27 @@ public class GitSite {
                 .setCommitter(this.user, this.email)
                 .setMessage(message)
                 .call();
+        LOGGER.info("Committed to repository at " + git.getRepository().getDirectory());
     }
 
     public void add(File targetFile) throws IOException, GitAPIException {
-        LOGGER.info("Adding file");
+        LOGGER.info("Adding file " + targetFile.getPath());
         git.add()
-                .addFilepattern(targetFile.getPath())
+                .addFilepattern(targetFile.getName())
                 .call();
     }
 
-    public Git cloneToLocalFilesystem() throws IOException, GitAPIException {
+    private Git cloneToLocalFilesystem() throws IOException, GitAPIException {
         LOGGER.info("Preparing destination folder for cloned repository");
-        File localPath = File.createTempFile("TestGitRepository", "");
-        localPath.delete();
-        LOGGER.info("Cloning " + this.remoteURL + " into " + localPath);
+        LOGGER.info("Cloning " + this.remoteURL + " into " + this.tmpCloneDir);
         Git result = Git.cloneRepository()
                 .setURI(this.remoteURL)
-                .setDirectory(localPath)
+                .setDirectory(this.tmpCloneDir)
                 .call();
         result.close();
         Repository repository = result.getRepository();
         Git git = new Git(repository);
         return git;
     }
+    private final File tmpCloneDir;
 }
