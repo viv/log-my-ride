@@ -2,6 +2,7 @@ package uk.me.viv.logmyride;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,13 +25,15 @@ public class MailWatch implements Runnable {
     private final String port;
     private final String username;
     private final String password;
+    private final BlockingQueue queue;
 
-    public MailWatch(String protocol, String host, String port, String username, String password) {
+    public MailWatch(String protocol, String host, String port, String username, String password, BlockingQueue queue) {
         this.protocol = protocol;
         this.host = host;
         this.port = port;
         this.username = username;
         this.password = password;
+        this.queue = queue;
     }
 
     @Override
@@ -61,6 +64,7 @@ public class MailWatch implements Runnable {
             inbox.open(Folder.READ_WRITE);
 
             int count = inbox.getMessageCount();
+            System.out.println("Found " + count + " messages");
             Message[] messages = inbox.getMessages(1, count);
             for (Message message : messages) {
                 if (!message.getFlags().contains(Flags.Flag.SEEN)) {
@@ -87,6 +91,7 @@ public class MailWatch implements Runnable {
                                 if (KMZFile.EXTENSION.equalsIgnoreCase(extension)) {
                                     System.out.println("Saving " + fileName);
                                     part.saveFile("/tmp/" + fileName);
+                                    this.queue.add(part.getInputStream());
                                 }
                             } else {
                                 // could be the message content
