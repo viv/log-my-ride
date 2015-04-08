@@ -23,17 +23,21 @@
  */
 package uk.me.viv.logmyride;
 
+import java.io.FileInputStream;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.concurrent.BlockingQueue;
 
 /**
  *
@@ -42,9 +46,11 @@ import java.nio.file.WatchService;
 public class DirectoryWatcher implements Runnable {
 
     private Path path;
+    private final BlockingQueue queue;
 
-    public DirectoryWatcher(String watchDir) {
+    public DirectoryWatcher(String watchDir, BlockingQueue queue) {
         this.path = Paths.get(watchDir);
+        this.queue = queue;
     }
 
     /**
@@ -76,7 +82,10 @@ public class DirectoryWatcher implements Runnable {
                         continue;
                     } else if (ENTRY_CREATE == kind) {
                         Path newPath = ((WatchEvent<Path>) watchEvent).context();
-                        System.out.println("New path created: " + newPath);
+                        System.out.println("New path created: " + path.resolve(newPath));
+                        if (KMZFile.isKMZ(newPath)) {
+                            this.queue.add(Files.newInputStream(path.resolve(newPath)));
+                        }
                     }
                 }
 
