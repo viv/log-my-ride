@@ -28,7 +28,42 @@ public class GeoFence {
         this.fence = fence;
     }
 
-    public Kml fence(InputStream kmlStream) throws FileNotFoundException, IOException {
+    public Kml fence(Kml kml) {
+
+        final Document doc = (Document) kml.getFeature();
+
+        final List<Feature> placemarks = doc.getFeature();
+        for (Feature placemark : placemarks) {
+            Placemark p = (Placemark) placemark;
+            System.out.println("Fencing " + p.getName());
+            Geometry geometry = p.getGeometry();
+            if (geometry instanceof MultiGeometry) {
+                List<Geometry> geometries = ((MultiGeometry)geometry).getGeometry();
+                final Geometry firstGeometry = geometries.get(0);
+                if (firstGeometry instanceof LineString) {
+                    LineString ls = (LineString) firstGeometry;
+                    ls.setCoordinates(removeFencedCoordinates(ls.getCoordinates()));
+                } else {
+                    System.out.println("First geometry is not a LineString: " + firstGeometry.getClass());
+                }
+            } else if (geometry instanceof Point) {
+                Point point = (Point) geometry;
+                point.setCoordinates(removeFencedCoordinates(point.getCoordinates()));
+            } else {
+                System.out.println("Unable to handle Geometry of type: " + geometry.getClass());
+            }
+        }
+        return kml;
+    }
+
+    /**
+     *
+     * @deprecated 
+     * @param kmlStream
+     * @return
+     * @throws IOException
+     */
+    public Kml fence(InputStream kmlStream) throws IOException {
         InputStream fixedKMLStream = fixNamespace(kmlStream);
 
         final Kml kml = Kml.unmarshal(fixedKMLStream);
