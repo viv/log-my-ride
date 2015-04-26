@@ -45,11 +45,11 @@ import java.util.concurrent.BlockingQueue;
  */
 public class DirectoryWatcher implements Runnable {
 
-    private Path path;
+    private Path watched;
     private final BlockingQueue queue;
 
     public DirectoryWatcher(String watchDir, BlockingQueue queue) {
-        this.path = Paths.get(watchDir);
+        this.watched = Paths.get(watchDir);
         this.queue = queue;
     }
 
@@ -59,17 +59,17 @@ public class DirectoryWatcher implements Runnable {
      */
     @Override
     public void run() {
-        if (!path.toFile().isDirectory()) {
-            throw new IllegalArgumentException("Path: " + path + " is not a folder");
+        if (!watched.toFile().isDirectory()) {
+            throw new IllegalArgumentException("Path: " + watched + " is not a folder");
         }
 
-        System.out.println("Watching path: " + path);
+        System.out.println("Watching path: " + watched);
 
-        FileSystem fs = path.getFileSystem();
+        FileSystem fs = watched.getFileSystem();
 
         try (WatchService service = fs.newWatchService()) {
 
-            path.register(service, ENTRY_CREATE);
+            watched.register(service, ENTRY_CREATE);
 
             WatchKey key = null;
             while (true) {
@@ -82,7 +82,7 @@ public class DirectoryWatcher implements Runnable {
                         continue;
                     } else if (ENTRY_CREATE == kind) {
                         Path newPath = ((WatchEvent<Path>) watchEvent).context();
-                        System.out.println("New path created: " + path.resolve(newPath));
+                        System.out.println("New path created: " + watched.resolve(newPath));
                         if (KMZFile.isKMZ(newPath)) {
                             this.queue.add(Files.newInputStream(path.resolve(newPath)));
                         }
@@ -93,10 +93,8 @@ public class DirectoryWatcher implements Runnable {
                     break;
                 }
             }
-        } catch (IOException ioe) {
+        } catch (IOException | InterruptedException ioe) {
             ioe.printStackTrace();
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
         }
     }
 }
