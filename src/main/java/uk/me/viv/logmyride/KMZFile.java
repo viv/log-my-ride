@@ -23,14 +23,18 @@
  */
 package uk.me.viv.logmyride;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -40,9 +44,11 @@ public class KMZFile {
     public static final String EXTENSION = "kmz";
 
     private final InputStream kmz;
+    private final String filename;
 
-    public KMZFile(InputStream kmz) {
+    public KMZFile(InputStream kmz, String filename) {
         this.kmz = kmz;
+        this.filename = normalise(filename);
     }
 
     public KMLFile getFirstKML() {
@@ -52,7 +58,7 @@ public class KMZFile {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (KMLFile.isKML(entry.getName())) {
-                    kml = new KMLFile(zis);
+                    kml = new KMLFile(getFilename(), fixNamespace(zis));
                     break;
                 }
             }
@@ -63,6 +69,23 @@ public class KMZFile {
             Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, null, ex);
         }
         return kml;
+    }
+
+    public String getFilename() {
+        return this.filename;
+    }
+
+    private String normalise(String filename) {
+        String normalised = filename.replaceAll(" +", "-").toLowerCase();
+        System.out.println("Renaming " + filename + " to " + normalised);
+        return normalised;
+    }
+
+    private InputStream fixNamespace(InputStream kmlStream) throws IOException, UnsupportedEncodingException {
+        String str = IOUtils.toString( kmlStream );
+        str = StringUtils.replace( str, "xmlns=\"http://earth.google.com/kml/2.2\"", "xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\"" );
+        ByteArrayInputStream fixedKMLStream = new ByteArrayInputStream( str.getBytes( "UTF-8" ) );
+        return fixedKMLStream;
     }
 
     static boolean isKMZ(Path path) {

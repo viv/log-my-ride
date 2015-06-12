@@ -5,20 +5,14 @@
  */
 package uk.me.viv.logmyride;
 
-import de.micromata.opengis.kml.v_2_2_0.Kml;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 /**
  *
@@ -26,12 +20,12 @@ import java.util.zip.ZipInputStream;
  */
 public class LogMyRide {
 
-    private static final String KMZ_WATCH_DIR = "/tmp";
+    private static final String OUTPUT_DIR = "/Users/matthewvivian/NetBeansProjects/LogMyRide/output/";
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         System.out.println("Starting " + LogMyRide.class.getName());
 
         // INJECT CONFIG
@@ -48,30 +42,23 @@ public class LogMyRide {
         //      Upload KMZ to github
         //      Append ride YML to file on github
 
-        // While true
-        //  check for MotionX mail
-        //  if HaveMail
-        //      GeoFence ride data
-        //      Create ride info
-        //      Update website
-        //
-
         Properties settings = LogMyRide.getProperties();
 
-        System.out.println("Starting directory watcher");
-        DirectoryWatcher watcher = new DirectoryWatcher(KMZ_WATCH_DIR);
-        Thread directoryWatcher = new Thread(watcher);
-        directoryWatcher.start();
+        LinkedBlockingQueue<KMZFile> kmzQueue = new LinkedBlockingQueue<>();
 
-        System.out.println("Starting mail watcher");
-        MailWatch mail = new MailWatch(
-                settings.getProperty("mail.protocol"),
-                settings.getProperty("mail.host"),
-                settings.getProperty("mail.port"),
-                settings.getProperty("mail.username"),
-                settings.getProperty("mail.password"));
-        Thread mailChecker = new Thread(mail);
-        mailChecker.start();
+        startDirectoryWatcher(settings.getProperty("processor.tmp.dir"), kmzQueue);
+
+//        System.out.println("Starting mail watcher");
+//        MailWatch mail = new MailWatch(
+//                settings.getProperty("mail.protocol"),
+//                settings.getProperty("mail.host"),
+//                settings.getProperty("mail.port"),
+//                settings.getProperty("mail.username"),
+//                settings.getProperty("mail.password"),
+//                kmzQueue);
+//        Thread mailChecker = new Thread(mail);
+//        mailChecker.start();
+//
 
         Fence fence = new Fence(
                 settings.getProperty("fence.top"),
@@ -81,58 +68,50 @@ public class LogMyRide {
 
         GeoFence geoFence = new GeoFence(fence);
 
-        List<File> filesToFence = LogMyRide.getFilesToFence();
+        try {
+            GitSite site = new GitSite(
+                    settings.getProperty("github.user"),
+                    settings.getProperty("github.email"),
+                    settings.getProperty("github.token"),
+                    settings.getProperty("github.remoteURL"),
+                    OUTPUT_DIR
+            );
 
-        for (File file : filesToFence) {
-            System.out.println("");
-            Logger.getLogger(LogMyRide.class.getName()).info("TO FENCE: " + file.getAbsolutePath());
-
-            try {
-                final ZipInputStream zis = new ZipInputStream(new FileInputStream(file));
-
-                ZipEntry entry;
-                while ((entry = zis.getNextEntry()) !=  null) {
-                    if (entry.getName().toLowerCase().endsWith(KMLFile.EXTENSION)) {
-                       Kml kml = geoFence.fence(zis);
-                       kml.marshalAsKmz("/Users/matthewvivian/NetBeansProjects/LogMyRide/samples/" + file.getName());
-                    }
+            int queueSize = 0;
+            while (true) {
+                if (queueSize != kmzQueue.size()) {
+                    queueSize = kmzQueue.size();
+                    System.out.println("Queue Size: " + queueSize);
                 }
-                zis.close();
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, null, ex);
+
+                KMZFile kmz = kmzQueue.take();
+                Logger.getLogger(LogMyRide.class.getName()).log(Level.INFO, "TAKEN {0} FROM QUEUE", kmz.getFilename());
+
+                KMLFile kml = kmz.getFirstKML();
+                try {
+                    kml = geoFence.fence(kml);
+                    final String fencedKMZ = kml.saveAsKmz(OUTPUT_DIR);
+                    Thread.sleep(100); // Give file time to save fully before adding to git
+                    site.add(kml.getFilename());
+                    site.commit("Added new ride: " + kml.getFilename());
+                    site.push();
+                } catch (IOException ex) {
+                    Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, "Failed to save fenced file", ex);
+                } catch (GitAPIException ex) {
+                    Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, "Failed to add fenced file to git", ex);
+                }
             }
+        } catch (IOException ex) { // GitSite construction
+            Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, "Failed to initiate Git Site", ex);
+        } finally {
         }
-
-
-//        GitSite site = new GitSite(
-//                settings.getProperty("github.user"),
-//                settings.getProperty("github.email"),
-//                settings.getProperty("github.token"),
-//                settings.getProperty("github.remoteURL"));
-//        site.update();
     }
 
-    private static List<File> getFilesToFence() {
-        File dir = new File(KMZ_WATCH_DIR);
-        File[] directoryListing = dir.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return KMZFile.isKMZ(name);
-            }
-        });
-
-        List<File> filesToFence = new ArrayList<File>();
-
-        if (directoryListing != null) {
-            for (File child : directoryListing) {
-                filesToFence.add(child);
-            }
-        } else {
-            Logger.getLogger(LogMyRide.class.getName()).warning("Error reading directory " + KMZ_WATCH_DIR);
-        }
-
-        return filesToFence;
+    private static void startDirectoryWatcher(final String watchDirectory, BlockingQueue<KMZFile> kmzQueue) {
+        System.out.println("Starting directory watcher");
+        DirectoryWatcher watcher = new DirectoryWatcher(watchDirectory, kmzQueue);
+        Thread directoryWatcher = new Thread(watcher);
+        directoryWatcher.start();
     }
 
     private static Properties getProperties() {

@@ -98,6 +98,7 @@ public class DirectoryWatcher implements Runnable {
     }
 
     private void addToQueue(Path newPath) throws IOException {
+        System.out.println("Adding " + newPath.getFileName() + " to queue");
         InputStream is = Files.newInputStream(watched.resolve(newPath));
         KMZFile kmz = new KMZFile(is, newPath.getFileName().toString());
         this.queue.add(kmz);

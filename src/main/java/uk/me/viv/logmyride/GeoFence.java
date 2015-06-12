@@ -10,7 +10,6 @@ import de.micromata.opengis.kml.v_2_2_0.MultiGeometry;
 import de.micromata.opengis.kml.v_2_2_0.Placemark;
 import de.micromata.opengis.kml.v_2_2_0.Point;
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -28,8 +27,9 @@ public class GeoFence {
         this.fence = fence;
     }
 
-    public Kml fence(Kml kml) {
+    public KMLFile fence(KMLFile toFence) {
 
+        Kml kml = toFence.getKml();
         final Document doc = (Document) kml.getFeature();
 
         final List<Feature> placemarks = doc.getFeature();
@@ -53,12 +53,12 @@ public class GeoFence {
                 System.out.println("Unable to handle Geometry of type: " + geometry.getClass());
             }
         }
-        return kml;
+        return new KMLFile(toFence.getFilename(), kml);
     }
 
     /**
      *
-     * @deprecated 
+     * @deprecated
      * @param kmlStream
      * @return
      * @throws IOException

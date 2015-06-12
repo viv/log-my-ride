@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.imageio.IIOException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -15,36 +14,37 @@ import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.eclipse.jgit.util.FS;
 
 
 public class GitSite {
 
     private static final String BLANK_PASSWORD = "";
-    private static final String TMP_GIT_DIR = "/tmp/tmpGitDir";
-
     private static final Logger LOGGER = Logger.getLogger(GitSite.class.getName());
 
     private final String user;
     private final String email;
     private final String token;
     private final String remoteURL;
+    private final File tmpCloneDir;
     private final Git git;
 
-    public GitSite(String user, String email, String token, String remoteURL) throws IOException {
+    public GitSite(String user, String email, String token, String remoteURL, String cloneToDir) throws IOException {
         this.user = user;
         this.email = email;
         this.token = token;
         this.remoteURL = remoteURL;
+        this.tmpCloneDir = new File(cloneToDir);
 
-        tmpCloneDir = new File(TMP_GIT_DIR);
         try {
             this.git = cloneToLocalFilesystem();
         } catch (GitAPIException ex) {
-            throw new IIOException("Failed to clone remote repository", ex);
+            throw new IOException("Failed to clone remote repository", ex);
         }
     }
 
@@ -55,7 +55,7 @@ public class GitSite {
             InputStream contents = IOUtils.toInputStream("Sample file", "UTF-8");
             FileUtils.copyInputStreamToFile(contents, targetFile);
 
-            add(targetFile);
+            add(targetFile.getName());
             commit("Added testfile");
             push();
             close();
@@ -99,24 +99,33 @@ public class GitSite {
         LOGGER.info("Committed to repository at " + git.getRepository().getDirectory());
     }
 
-    public void add(File targetFile) throws IOException, GitAPIException {
-        LOGGER.info("Adding file " + targetFile.getPath());
+    public void add(String fileName) throws IOException, GitAPIException {
+        LOGGER.info("Adding file " + fileName);
         git.add()
-                .addFilepattern(targetFile.getName())
+                .addFilepattern(fileName)
                 .call();
     }
 
     private Git cloneToLocalFilesystem() throws IOException, GitAPIException {
         LOGGER.info("Preparing destination folder for cloned repository");
-        LOGGER.info("Cloning " + this.remoteURL + " into " + this.tmpCloneDir);
-        Git result = Git.cloneRepository()
-                .setURI(this.remoteURL)
-                .setDirectory(this.tmpCloneDir)
-                .call();
-        result.close();
-        Repository repository = result.getRepository();
-        Git git = new Git(repository);
+
+        Git git;
+
+        File existingRepo = RepositoryCache.FileKey.resolve(this.tmpCloneDir, FS.DETECTED);
+        if (existingRepo == null) {
+            LOGGER.info("Cloning " + this.remoteURL + " into " + this.tmpCloneDir);
+            Git result = Git.cloneRepository()
+                    .setURI(this.remoteURL)
+                    .setDirectory(this.tmpCloneDir)
+                    .call();
+            result.close();
+            Repository repository = result.getRepository();
+            git = new Git(repository);
+        } else {
+            LOGGER.info("Already cloned, using existing repository.");
+            git = Git.open(tmpCloneDir);
+        }
+
         return git;
     }
-    private final File tmpCloneDir;
 }
