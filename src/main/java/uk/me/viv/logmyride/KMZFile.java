@@ -95,4 +95,20 @@ public class KMZFile {
     static boolean isKMZ(String path) {
         return path.toLowerCase().endsWith(EXTENSION);
     }
+
+    /**
+     * Close the KMZ InputStream
+     */
+    public void close() {
+        try {
+            this.kmz.close();
+        } catch (IOException ex) {
+            Logger.getLogger(KMZFile.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return this.getFilename();
+    }
 }

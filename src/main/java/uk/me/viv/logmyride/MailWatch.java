@@ -1,6 +1,9 @@
 package uk.me.viv.logmyride;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
@@ -83,16 +86,13 @@ public class MailWatch implements Runnable {
                             MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(partCount);
                             if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
                                 // this part is an attachment
-                                String fileName = part.getFileName().replaceAll(" +", "-").toLowerCase();
+                                String fileName = part.getFileName();
                                 attachFiles += fileName + ", ";
 
-                                String extension = fileName.substring(fileName.lastIndexOf(".") + 1, fileName.length());
-
-                                if (KMZFile.EXTENSION.equalsIgnoreCase(extension)) {
-                                    System.out.println("Saving " + fileName);
-                                    part.saveFile("/tmp/" + fileName);
-                                    this.queue.add(part.getInputStream());
+                                if (KMZFile.isKMZ(fileName)) {
+                                    addToQueue(part, fileName);
                                 }
+
                             } else {
                                 // could be the message content
                                 messageContent = part.getContent().toString();
@@ -128,10 +128,21 @@ public class MailWatch implements Runnable {
             System.out.println("No provider for protocol: " + protocol);
             ex.printStackTrace();
         } catch (MessagingException ex) {
-            System.out.println("Could not connect to the message store");
-            ex.printStackTrace();
+            Logger.getLogger(MailWatch.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(MailWatch.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private void addToQueue(MimeBodyPart attachment, String fileName) throws IOException, MessagingException {
+        System.out.println("Saving " + fileName + " to temporary directory");
+        attachment.saveFile("/tmp/" + fileName);
+
+        FileInputStream tmpFile = new FileInputStream(new File("/tmp/" + fileName));
+
+        KMZFile kmz = new KMZFile(tmpFile, fileName);
+
+        System.out.println("Adding " + kmz + " to queue");
+        this.queue.add(kmz);
     }
 }

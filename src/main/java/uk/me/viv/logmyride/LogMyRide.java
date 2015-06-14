@@ -9,7 +9,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -48,17 +51,17 @@ public class LogMyRide {
 
         startDirectoryWatcher(settings.getProperty("processor.tmp.dir"), kmzQueue);
 
-//        System.out.println("Starting mail watcher");
-//        MailWatch mail = new MailWatch(
-//                settings.getProperty("mail.protocol"),
-//                settings.getProperty("mail.host"),
-//                settings.getProperty("mail.port"),
-//                settings.getProperty("mail.username"),
-//                settings.getProperty("mail.password"),
-//                kmzQueue);
-//        Thread mailChecker = new Thread(mail);
-//        mailChecker.start();
-//
+        System.out.println("Starting mail watcher");
+        MailWatch mailCheck = new MailWatch(
+                settings.getProperty("mail.protocol"),
+                settings.getProperty("mail.host"),
+                settings.getProperty("mail.port"),
+                settings.getProperty("mail.username"),
+                settings.getProperty("mail.password"),
+                kmzQueue);
+
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+        scheduledExecutorService.scheduleAtFixedRate(mailCheck, 0, 10, MINUTES);
 
         Fence fence = new Fence(
                 settings.getProperty("fence.top"),
@@ -95,6 +98,7 @@ public class LogMyRide {
                     site.add(kml.getFilename());
                     site.commit("Added new ride: " + kml.getFilename());
                     site.push();
+                    kmz.close();
                 } catch (IOException ex) {
                     Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, "Failed to save fenced file", ex);
                 } catch (GitAPIException ex) {
@@ -105,6 +109,7 @@ public class LogMyRide {
             Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, "Failed to initiate Git Site", ex);
         } finally {
         }
+        scheduledExecutorService.shutdown();
     }
 
     private static void startDirectoryWatcher(final String watchDirectory, BlockingQueue<KMZFile> kmzQueue) {
