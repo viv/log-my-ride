@@ -31,24 +31,15 @@ public class LogMyRide {
     public static void main(String[] args) throws InterruptedException {
         System.out.println("Starting " + LogMyRide.class.getName());
 
-        // INJECT CONFIG
-        //      From a config properties file?
-        // GEO FENCE
-        //      Detect KMZ
-        //      Get KML from KMZ
-        //      Geo Filter
-        //      Write KML to KMZ
         // YML RIDE INFO
         //      Read ride info from KML
         //      Generate ride YML
-        // GIT INTEGRATION
-        //      Upload KMZ to github
-        //      Append ride YML to file on github
 
         Properties settings = LogMyRide.getProperties();
 
         LinkedBlockingQueue<KMZFile> kmzQueue = new LinkedBlockingQueue<>();
 
+        // TODO - can this be refactored into DirectoryWatcher.start()
         startDirectoryWatcher(settings.getProperty("processor.tmp.dir"), kmzQueue);
 
         System.out.println("Starting mail watcher");
@@ -60,9 +51,11 @@ public class LogMyRide {
                 settings.getProperty("mail.password"),
                 kmzQueue);
 
+        // TODO - can these 2 be pushed into a MailWatch.start() method
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         scheduledExecutorService.scheduleAtFixedRate(mailCheck, 0, 10, MINUTES);
 
+        // TODO - can I just pass in settings.getProperty("fence")?
         Fence fence = new Fence(
                 settings.getProperty("fence.top"),
                 settings.getProperty("fence.bottom"),
@@ -84,7 +77,7 @@ public class LogMyRide {
             while (true) {
                 if (queueSize != kmzQueue.size()) {
                     queueSize = kmzQueue.size();
-                    System.out.println("Queue Size: " + queueSize);
+                    System.out.println("Queue Size in now: " + queueSize);
                 }
 
                 KMZFile kmz = kmzQueue.take();
@@ -109,6 +102,8 @@ public class LogMyRide {
             Logger.getLogger(LogMyRide.class.getName()).log(Level.SEVERE, "Failed to initiate Git Site", ex);
         } finally {
         }
+
+        // TODO - can this be pushed into a MailWatch.stop() method
         scheduledExecutorService.shutdown();
     }
 

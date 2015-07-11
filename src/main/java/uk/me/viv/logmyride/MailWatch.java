@@ -3,7 +3,6 @@ package uk.me.viv.logmyride;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;

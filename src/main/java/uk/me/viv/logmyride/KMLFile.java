@@ -64,6 +64,7 @@ public class KMLFile {
                 Level.INFO, "SAVING " + getFilename() + " to " + path);
         final String fullPath = path + getFilename();
         this.kml.marshalAsKmz(fullPath);
+        // TODO - verify file is fully written before returning
         return fullPath;
     }
 }

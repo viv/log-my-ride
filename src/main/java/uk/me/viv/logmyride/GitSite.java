@@ -2,12 +2,9 @@ package uk.me.viv.logmyride;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PushCommand;
@@ -45,23 +42,6 @@ public class GitSite {
             this.git = cloneToLocalFilesystem();
         } catch (GitAPIException ex) {
             throw new IOException("Failed to clone remote repository", ex);
-        }
-    }
-
-    public void update() {
-        try {
-            LOGGER.info("Creating file");
-            File targetFile = new File(git.getRepository().getDirectory().getParent(), "newfile");
-            InputStream contents = IOUtils.toInputStream("Sample file", "UTF-8");
-            FileUtils.copyInputStreamToFile(contents, targetFile);
-
-            add(targetFile.getName());
-            commit("Added testfile");
-            push();
-            close();
-
-        }   catch (GitAPIException | IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
 
