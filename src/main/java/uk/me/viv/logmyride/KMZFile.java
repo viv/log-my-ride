@@ -23,7 +23,6 @@
  */
 package uk.me.viv.logmyride;
 
-import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,7 +57,7 @@ public class KMZFile {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (KMLFile.isKML(entry.getName())) {
-                    kml = new KMLFile(getFilename(), fixNamespace(zis));
+                    kml = new KMLFile(getFilename(), fixNamespace(IOUtils.toString(zis)));
                     break;
                 }
             }
@@ -81,11 +80,8 @@ public class KMZFile {
         return normalised;
     }
 
-    private InputStream fixNamespace(InputStream kmlStream) throws IOException, UnsupportedEncodingException {
-        String str = IOUtils.toString( kmlStream );
-        str = StringUtils.replace( str, "xmlns=\"http://earth.google.com/kml/2.2\"", "xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\"" );
-        ByteArrayInputStream fixedKMLStream = new ByteArrayInputStream( str.getBytes( "UTF-8" ) );
-        return fixedKMLStream;
+    private String fixNamespace(String kml) throws IOException, UnsupportedEncodingException {
+        return StringUtils.replace(kml, "xmlns=\"http://earth.google.com/kml/2.2\"", "xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\"" );
     }
 
     static boolean isKMZ(Path path) {

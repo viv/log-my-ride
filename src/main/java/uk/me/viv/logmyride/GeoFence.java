@@ -9,6 +9,7 @@ import de.micromata.opengis.kml.v_2_2_0.LineString;
 import de.micromata.opengis.kml.v_2_2_0.MultiGeometry;
 import de.micromata.opengis.kml.v_2_2_0.Placemark;
 import de.micromata.opengis.kml.v_2_2_0.Point;
+import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class GeoFence {
 
     public KMLFile fence(KMLFile toFence) {
 
-        Kml kml = toFence.getKml();
+        Kml kml = Kml.unmarshal(toFence.toString());
         final Document doc = (Document) kml.getFeature();
 
         final List<Feature> placemarks = doc.getFeature();
@@ -47,7 +48,9 @@ public class GeoFence {
                 System.out.println("Unable to handle Geometry of type: " + geometry.getClass());
             }
         }
-        return new KMLFile(toFence.getFilename(), kml);
+        StringWriter fenced = new StringWriter();
+        kml.marshal(fenced);
+        return new KMLFile(toFence.getFilename(), fenced.toString());
     }
 
     private boolean isInsideFence(Coordinate coordinate) {

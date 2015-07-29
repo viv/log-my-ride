@@ -25,7 +25,6 @@ package uk.me.viv.logmyride;
 
 import de.micromata.opengis.kml.v_2_2_0.Kml;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,24 +34,16 @@ import java.util.logging.Logger;
  */
 public class KMLFile {
     public static final String EXTENSION = "kml";
-    private final Kml kml;
+    private final String kml;
     private final String filename;
 
-    KMLFile(String filename, InputStream content) throws IOException {
-        this(filename, Kml.unmarshal(content));
-    }
-
-    KMLFile(String filename, Kml content) {
+    KMLFile(String filename, String content) {
         this.filename = filename;
         this.kml = content;
     }
 
     static boolean isKML(String path) {
         return path.toLowerCase().endsWith(EXTENSION);
-    }
-
-    public Kml getKml() {
-        return kml;
     }
 
     public String getFilename() {
@@ -63,8 +54,14 @@ public class KMLFile {
         Logger.getLogger(KMLFile.class.getName()).log(
                 Level.INFO, "SAVING " + getFilename() + " to " + path);
         final String fullPath = path + getFilename();
-        this.kml.marshalAsKmz(fullPath);
+        Kml toSave = Kml.unmarshal(this.kml);
+        toSave.marshalAsKmz(fullPath);
         // TODO - verify file is fully written before returning
         return fullPath;
+    }
+
+    @Override
+    public String toString() {
+        return this.kml;
     }
 }
