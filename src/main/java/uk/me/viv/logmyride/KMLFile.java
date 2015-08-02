@@ -26,6 +26,8 @@ package uk.me.viv.logmyride;
 import de.micromata.opengis.kml.v_2_2_0.Kml;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
@@ -34,6 +36,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -64,9 +67,7 @@ public class KMLFile {
      * @todo push this down into a MotionX specific KML class
      * @return
      */
-    public String getDescription() {
-
-        String description = "";
+    public Map<String, String> getDescription() {
 
         String[] descriptionProperties = {
             "Date",
@@ -81,6 +82,8 @@ public class KMLFile {
             "Finish Time",
         };
 
+        Map<String, String> description = new HashMap<>();
+
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder;
         try {
@@ -92,9 +95,15 @@ public class KMLFile {
                 XPathFactory xPathfactory = XPathFactory.newInstance();
                 XPath xpath = xPathfactory.newXPath();
 
+                description.put("Name", xpath.evaluate("//Document/name/text()", doc));
+
                 for (String property : descriptionProperties) {
-                    description += property + " = " + xpath.evaluate("//td[text()=\"" + property + ":\"]/following::td[1]/text()", doc) + "\n";
+                    description.put(property, xpath.evaluate("//td[text()=\"" + property + ":\"]/following::td[1]/text()", doc));
                 }
+
+                description.put("Filename", this.getFilename());
+                description.put("ID", DigestUtils.shaHex(Integer.toString(description.hashCode())));
+
             } catch (SAXException ex) {
                 Logger.getLogger(KMLFile.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {

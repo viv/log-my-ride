@@ -7,6 +7,7 @@ package uk.me.viv.logmyride;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
@@ -84,7 +85,12 @@ public class LogMyRide {
                 Logger.getLogger(LogMyRide.class.getName()).log(Level.INFO, "TAKEN {0} FROM QUEUE", kmz.getFilename());
 
                 KMLFile kml = kmz.getFirstKML();
-                System.out.println(kml.getDescription());
+                Map<String, String> description = kml.getDescription();
+                for (String name: description.keySet()){
+                    String key = name.toString();
+                    String value = description.get(name).toString();
+                    System.out.println(key + " = " + value);
+                }
 
                 try {
                     kml = geoFence.fence(kml);
