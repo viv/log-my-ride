@@ -112,6 +112,7 @@ public class LogMyRide {
         DirectoryWatcher watcher = new DirectoryWatcher(watchDirectory, kmzQueue);
         Thread directoryWatcher = new Thread(watcher);
         directoryWatcher.setDaemon(true); // important, otherwise JVM does not exit at end of main()
+        directoryWatcher.setName("DirectoryWatcher");
         directoryWatcher.start();
     }
 
