@@ -25,8 +25,18 @@ package uk.me.viv.logmyride;
 
 import de.micromata.opengis.kml.v_2_2_0.Kml;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -48,6 +58,55 @@ public class KMLFile {
 
     public String getFilename() {
         return this.filename;
+    }
+
+    /**
+     * @todo push this down into a MotionX specific KML class
+     * @return
+     */
+    public String getDescription() {
+
+        String description = "";
+
+        String[] descriptionProperties = {
+            "Date",
+            "Distance",
+            "Elapsed Time",
+            "Avg Speed",
+            "Max Speed",
+            "Avg Pace",
+            "Min Altitude",
+            "Max Altitude",
+            "Start Time",
+            "Finish Time",
+        };
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder;
+        try {
+            builder = factory.newDocumentBuilder();
+            InputSource is = new InputSource();
+            is.setCharacterStream(new StringReader(this.kml));
+            try {
+                Document doc = builder.parse(is);
+                XPathFactory xPathfactory = XPathFactory.newInstance();
+                XPath xpath = xPathfactory.newXPath();
+
+                for (String property : descriptionProperties) {
+                    description += property + " = " + xpath.evaluate("//td[text()=\"" + property + ":\"]/following::td[1]/text()", doc) + "\n";
+                }
+            } catch (SAXException ex) {
+                Logger.getLogger(KMLFile.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(KMLFile.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (XPathExpressionException ex) {
+                Logger.getLogger(KMLFile.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } catch (ParserConfigurationException ex) {
+            Logger.getLogger(KMLFile.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return description;
     }
 
     public String saveAsKmz(String path) throws IOException {

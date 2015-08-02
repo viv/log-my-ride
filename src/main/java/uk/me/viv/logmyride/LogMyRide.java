@@ -84,6 +84,8 @@ public class LogMyRide {
                 Logger.getLogger(LogMyRide.class.getName()).log(Level.INFO, "TAKEN {0} FROM QUEUE", kmz.getFilename());
 
                 KMLFile kml = kmz.getFirstKML();
+                System.out.println(kml.getDescription());
+
                 try {
                     kml = geoFence.fence(kml);
                     final String fencedKMZ = kml.saveAsKmz(OUTPUT_DIR);
